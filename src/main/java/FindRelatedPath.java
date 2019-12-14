@@ -36,6 +36,9 @@ public class FindRelatedPath {
         // Step 1 - is there a path
         // Step 2 - what is a shortest path - listing the videos
         // Step 3 - are there multiple paths
+        // Optimisations
+        //  / only fetch ids for initial pass through, then re-query with those ids for collating title information
+        //
 
         // Increment depth counter
         // From current video
@@ -84,7 +87,7 @@ public class FindRelatedPath {
 
     private static List<SearchResult> findRelatedVideos(YouTube youtube, String apiKey, String videoId) throws IOException {
         System.out.println("DEBUG - making call to api...");
-        YouTube.Search.List search = youtube.search().list("id, snippet");
+        YouTube.Search.List search = youtube.search().list("id");
         search.setKey(apiKey);
         search.setType("video");
         search.setRelatedToVideoId(videoId);
