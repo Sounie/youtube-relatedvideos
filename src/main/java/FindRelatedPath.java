@@ -8,9 +8,7 @@ import com.google.api.services.youtube.model.SearchListResponse;
 import com.google.api.services.youtube.model.SearchResult;
 
 import java.io.*;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class FindRelatedPath {
@@ -21,35 +19,34 @@ public class FindRelatedPath {
         String id2 = "otCpCn0l4Wo"; // MC Hammer - You can't touch this
         String apiKey = loadApiKey();
         // Takes 2 videos and finds out if they are related, and by what paths
-
+        System.out.println("DEBUG 1");
         ApacheHttpTransport transport = new ApacheHttpTransport();
-
+        System.out.println("DEBUG 2");
         YouTube youtube = new YouTube.Builder(transport, jsonFactory, new HttpRequestInitializer() {
             public void initialize(HttpRequest request) throws IOException {
+                System.out.println("DEBUG 3");
             }
         })
-                .setApplicationName("My Project")
+                .setApplicationName("My Project") // This may need to match
                 .build();
-
+        System.out.println("DEBUG 4");
         Set<String> checkedVideosIds = new HashSet<>();
 
         // Step 1 - is there a path
         // Step 2 - what is a shortest path - listing the videos
         // Step 3 - are there multiple paths
-        // Optimisations
+        // Optimisations and extensions
         //  / only fetch ids for initial pass through, then re-query with those ids for collating title information
-        //
+        //  - Establish whether specifying a maximum results > default (10) produces more videos to include in consideration
 
-        // Increment depth counter
-        // From current video
-        // Request related videos
-        // Check for reaching destination
-        // Filter out already seen videos
-
-        checkRelatedVideos(apiKey, checkedVideosIds, 1, youtube, id1, id2);
+        System.out.println("DEBUG 5");
+        Deque<String> pathVideos = new ArrayDeque<>();
+        checkRelatedVideos(apiKey, checkedVideosIds, 1, pathVideos, youtube, id1, id2);
     }
 
-    private static boolean checkRelatedVideos(String apiKey, Set<String> checkedVideoIds, int currentDepth, YouTube youtube, String videoId, String destinationVideoId) throws IOException {
+    private static boolean checkRelatedVideos(String apiKey, Set<String> checkedVideoIds, int currentDepth, Deque<String> pathVideos, YouTube youtube, String videoId, String destinationVideoId) throws IOException {
+
+        System.out.println("DEBUG 6");
         List<SearchResult> relatedVideos = findRelatedVideos(youtube, apiKey, videoId);
         if (canFindDestination(destinationVideoId, relatedVideos)) {
             System.out.println("Found a path");
@@ -59,13 +56,15 @@ public class FindRelatedPath {
 
             if (!videoIds.isEmpty()) {
                 currentDepth++;
-                for (String nestedVideoId : videoIds) {
-                    checkedVideoIds.add(nestedVideoId);
-                    if (checkRelatedVideos(apiKey, checkedVideoIds, currentDepth, youtube, nestedVideoId, destinationVideoId)) {
-                        System.out.println("Found a path at depth " + currentDepth);
-                        return true;
-                    }
-                }
+                // FIXME: Something probably going wrong here - burning API quota
+//                for (String nestedVideoId : videoIds) {
+//                    checkedVideoIds.add(nestedVideoId);
+//                    if (checkRelatedVideos(apiKey, checkedVideoIds, currentDepth, pathVideos, youtube, nestedVideoId, destinationVideoId)) {
+//                        pathVideos.add(nestedVideoId);
+//                        System.out.println("Found a path at depth " + currentDepth);
+//                        return true;
+//                    }
+//                }
             }
         }
         System.out.println("didn't find a path");
@@ -87,12 +86,17 @@ public class FindRelatedPath {
 
     private static List<SearchResult> findRelatedVideos(YouTube youtube, String apiKey, String videoId) throws IOException {
         System.out.println("DEBUG - making call to api...");
+        // Single call costs 100 query quota, with a daily quota limit of  - see if there is something in the API for getting the video directly by id
         YouTube.Search.List search = youtube.search().list("id");
         search.setKey(apiKey);
         search.setType("video");
         search.setRelatedToVideoId(videoId);
+        search.setMaxResults(10L);
 
         SearchListResponse result = search.execute();
+
+        System.out.println("result items: " + result.getItems().size());
+        System.out.println("total results: " + result.getPageInfo().getTotalResults());
 
         return result.getItems();
     }
