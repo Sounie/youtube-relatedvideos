@@ -2,7 +2,7 @@ import com.google.api.client.http.HttpRequest;
 import com.google.api.client.http.HttpRequestInitializer;
 import com.google.api.client.http.apache.v2.ApacheHttpTransport;
 import com.google.api.client.json.JsonFactory;
-import com.google.api.client.json.jackson2.JacksonFactory;
+import com.google.api.client.json.gson.GsonFactory;
 import com.google.api.services.youtube.YouTube;
 import com.google.api.services.youtube.model.SearchListResponse;
 import com.google.api.services.youtube.model.SearchResult;
@@ -12,7 +12,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 public class FindRelatedPath {
-    private static JsonFactory jsonFactory = JacksonFactory.getDefaultInstance();
+    private static final JsonFactory jsonFactory = GsonFactory.getDefaultInstance();
 
     public static void main(String[] args) throws IOException {
         String id1 = "LI87PRgIKks"; // Cassette Boy vs Boris Johnson
